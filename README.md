@@ -27,3 +27,33 @@ To install the `intel extensions for pytorch` and all other needed packages, run
 ```bash
 pip install intel-extension-for-transformers torch tokenizers sentencepiece protobuf accelerate
 ```
+
+## Huggingface models
+
+To correctly use a language model from the [huggingface](https://huggingface.co/) server, you will first need to import all the modules:
+
+```python
+from transformers import AutoTokenizer, TextStreamer
+from intel_extension_for_transformers.transformers import AutoModelForCausalLM
+import torch
+```
+
+After this, a model can be loaded using `model = AutoModelForCausalLM.from_pretrained(model_name)`, but there is some __jank__ in the intel-extension-for-transformers module we have to take care of first:
+
+### Dealing with the jank
+First of all, you will need to download the model from the huggingface hub. You can do this either using `git` like this:
+```bash
+git lfs install
+git clone git@hf.co:<MODEL ID>
+```
+
+Or you can also run the following bit of python code for your model:
+
+```python
+from intel_extension_for_transformers.transformers import AutoModelForCausalLM
+model = AutoModelForCausalLM.from_pretrained(model_id)
+```
+
+This will download the model to your local machine. If you don't have enough RAM, this will probably either get killed automatically (if you are using `zsh`) or kill your machine. A way to circumvent this behaviour is to abort the piece of code when it enters the stage `Loading checkpoint shards`.
+
+If you can and want to use the model in its full precisioan, you have now downloaded it and can go on and use it as you please. If you want to quantize it to optimize to use less CPU RAM, follow these steps:
