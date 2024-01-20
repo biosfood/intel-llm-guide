@@ -8,6 +8,8 @@ Im am assuming you have an intel-CPU with an integrated graphics chip. I have te
 
 You should  also have the `python3` package installed (`sudo apt install python` or `sudo pacman -S python`).
 
+You will also need the `git` and `git-lfs` packages.
+
 ### Virtual environment
 
 First of all, create a new virtual python environment. This should probably be located in the `/opt` folder. My AI development environment path for example is `/opt/python-envs/AI`. After deciding on your environment path, run:
@@ -30,30 +32,22 @@ pip install intel-extension-for-transformers torch tokenizers sentencepiece prot
 
 ## Huggingface models
 
-To correctly use a language model from the [huggingface](https://huggingface.co/) server, you will first need to import all the modules:
+As of Janurary 2023, there are some problems with the intel-extension-for-transformers module, making "normal" usage not possible.
+
+First of all, create a new directory to store all of your models with `mkdir /opt/models && sudo chown $USER /opt/models`.
+
+To correctly use a language model from the [huggingface](https://huggingface.co/) server, you first have to create an account and add your SSH key in the options menu. Then, use the clone script like this:
+
+```bash
+./clone_model.sh <model_id>
+```
+
+After this, you can start using the model:
 
 ```python
 from transformers import AutoTokenizer, TextStreamer
 from intel_extension_for_transformers.transformers import AutoModelForCausalLM
 import torch
+
+model = AutoModelForCausalLM.from_pretrained("/opt/llms/" + model_id)
 ```
-
-After this, a model can be loaded using `model = AutoModelForCausalLM.from_pretrained(model_name)`, but there is some __jank__ in the intel-extension-for-transformers module we have to take care of first:
-
-### Dealing with the jank
-First of all, you will need to download the model from the huggingface hub. You can do this either using `git` like this:
-```bash
-git lfs install
-git clone git@hf.co:<MODEL ID>
-```
-
-Or you can also run the following bit of python code for your model:
-
-```python
-from intel_extension_for_transformers.transformers import AutoModelForCausalLM
-model = AutoModelForCausalLM.from_pretrained(model_id)
-```
-
-This will download the model to your local machine. If you don't have enough RAM, this will probably either get killed automatically (if you are using `zsh`) or kill your machine. A way to circumvent this behaviour is to abort the piece of code when it enters the stage `Loading checkpoint shards`.
-
-If you can and want to use the model in its full precisioan, you have now downloaded it and can go on and use it as you please. If you want to quantize it to optimize to use less CPU RAM, follow these steps:
